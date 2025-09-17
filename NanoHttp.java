@@ -29,7 +29,7 @@ public class NanoHttp{
         return serveFile(uri, header, new File("."), true);
     }
 
-public class Response {
+	public class Response {
         /**
          * Default constructor: response = HTTP_OK, data = mime = 'null'
          */
@@ -108,7 +108,40 @@ public class Response {
         myThread.start();
     }
 
-        public Response serveFile(String uri, Properties header, File homeDir, boolean allowDirectoryListing) {
+public static void main(String[] args) {
+        int lopt = -1;
+        for (int i = 0; i < args.length; ++i)
+            if (args[i].toLowerCase().endsWith("licence")) {
+                lopt = i;
+                System.out.println(LICENCE + "\n");
+                break;
+            }
+
+        // Change port if requested
+        int port = 80;
+        if (args.length > 0 && lopt != 0)
+            port = Integer.parseInt(args[0]);
+
+        try {
+            new NanoHTTPd(port);
+        } catch (IOException ioe) {
+            System.err.println("Couldn't start server:\n" + ioe);
+            System.exit(-1);
+        }
+
+        System.out.println("Now serving files in port " + port + " from \"" + new File("").getAbsolutePath() + "\"");
+
+        while (true) {
+            try {
+                System.out.println("nano");
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public Response serveFile(String uri, Properties header, File homeDir, boolean allowDirectoryListing) {
         // Make sure we won't die of an exception later
         if (!homeDir.isDirectory())
             return new Response(HTTP_INTERNALERROR, MIME_PLAINTEXT,
@@ -236,7 +269,7 @@ public class Response {
             return new Response(HTTP_FORBIDDEN, MIME_PLAINTEXT, "FORBIDDEN: Reading file failed.");
         }
     }
-    
+
     public void stop() {
         try {
             myServerSocket.close();
