@@ -32,6 +32,48 @@ public class NanoHttp{
         }
     }
 
+        private void decodeHeader(BufferedReader in, Properties pre, Properties parms, Properties header) throws InterruptedException {
+            try {
+
+                String inLine = in.readLine();
+                if (inLine == null) return;
+
+                StringTokenizer st = new StringTokenizer(inLine);
+
+                if (!st.hasMoreTokens())
+                    sendError(HTTP_BADREQUEST, "BAD REQUEST: Syntax error. Usage: GET /example/file.html");
+
+                String method = st.nextToken();
+                pre.put("method", method);
+
+                if (!st.hasMoreTokens())
+                    sendError(HTTP_BADREQUEST, "BAD REQUEST: Missing URI. Usage: GET /example/file.html");
+
+                String uri = st.nextToken();
+
+                int qmi = uri.indexOf('?');
+                if (qmi >= 0) {
+                    decodeParms(uri.substring(qmi + 1), parms);
+                    uri = decodePercent(uri.substring(0, qmi));
+                } else uri = decodePercent(uri);
+
+                if (st.hasMoreTokens()) {
+                    String line = in.readLine();
+
+                    while (line != null && line.trim().length() > 0) {
+                        int p = line.indexOf(':');
+                        if (p >= 0)
+                            header.put(line.substring(0, p).trim().toLowerCase(), line.substring(p + 1).trim());
+                        line = in.readLine();
+                    }
+                }
+
+                pre.put("uri", uri);
+            } catch (IOException ioe) {
+                sendError(HTTP_INTERNALERROR, "SERVER INTERNAL ERROR: IOException: " + ioe.getMessage());
+            }
+        }
+
 
 	// Utilities
 	public static final String
