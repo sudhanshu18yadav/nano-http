@@ -193,6 +193,26 @@ public class NanoHttp{
             }
         }
 
+		 private void decodeParms(String parms, Properties p) throws InterruptedException {
+            if (parms == null)
+                return;
+
+            StringTokenizer st = new StringTokenizer(parms, "&");
+            while (st.hasMoreTokens()) {
+                String e = st.nextToken();
+                int sep = e.indexOf('=');
+                p.put(
+                        decodePercent((sep >= 0) ? e.substring(0, sep) : e).trim(),
+                        (sep >= 0) ? decodePercent(e.substring(sep + 1)) : ""
+                );
+            }
+        }
+
+
+        private void sendError(String status, String msg) throws InterruptedException {
+            sendResponse(status, MIME_PLAINTEXT, null, new ByteArrayInputStream(msg.getBytes()));
+            throw new InterruptedException();
+        }
 
 
 
