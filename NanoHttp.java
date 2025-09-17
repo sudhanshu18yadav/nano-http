@@ -74,6 +74,71 @@ public class NanoHttp{
             }
         }
 
+        private void decodeMultipartData(String boundary, byte[] fbuf, BufferedReader in, Properties parms, Properties files)
+                throws InterruptedException {
+            try {
+                int[] bpositions = getBoundaryPositions(fbuf, boundary.getBytes());
+                int boundarycount = 1;
+                String mpline = in.readLine();
+                while (mpline != null) {
+                    if (mpline.indexOf(boundary) == -1)
+                        sendError(HTTP_BADREQUEST, "BAD REQUEST: Content type is multipart/form-data but next chunk does not start with boundary. Usage: GET /example/file.html");
+                    boundarycount++;
+                    Properties item = new Properties();
+                    mpline = in.readLine();
+                    while (mpline != null && mpline.trim().length() > 0) {
+                        int p = mpline.indexOf(':');
+                        if (p != -1)
+                            item.put(mpline.substring(0, p).trim().toLowerCase(), mpline.substring(p + 1).trim());
+                        mpline = in.readLine();
+                    }
+                    if (mpline != null) {
+                        String contentDisposition = item.getProperty("content-disposition");
+                        if (contentDisposition == null) {
+                            sendError(HTTP_BADREQUEST, "BAD REQUEST: Content type is multipart/form-data but no content-disposition info found. Usage: GET /example/file.html");
+                        }
+                        StringTokenizer st = new StringTokenizer(contentDisposition, "; ");
+                        Properties disposition = new Properties();
+                        while (st.hasMoreTokens()) {
+                            String token = st.nextToken();
+                            int p = token.indexOf('=');
+                            if (p != -1)
+                                disposition.put(token.substring(0, p).trim().toLowerCase(), token.substring(p + 1).trim());
+                        }
+                        String pname = disposition.getProperty("name");
+                        pname = pname.substring(1, pname.length() - 1);
+
+                        String value = "";
+                        if (item.getProperty("content-type") == null) {
+                            while (mpline != null && mpline.indexOf(boundary) == -1) {
+                                mpline = in.readLine();
+                                if (mpline != null) {
+                                    int d = mpline.indexOf(boundary);
+                                    if (d == -1)
+                                        value += mpline;
+                                    else
+                                        value += mpline.substring(0, d - 2);
+                                }
+                            }
+                        } else {
+                            if (boundarycount > bpositions.length)
+                                sendError(HTTP_INTERNALERROR, "Error processing request");
+                            int offset = stripMultipartHeaders(fbuf, bpositions[boundarycount - 2]);
+                            String path = saveTmpFile(fbuf, offset, bpositions[boundarycount - 1] - offset - 4);
+                            files.put(pname, path);
+                            value = disposition.getProperty("filename");
+                            value = value.substring(1, value.length() - 1);
+                            do {
+                                mpline = in.readLine();
+                            } while (mpline != null && mpline.indexOf(boundary) == -1);
+                        }
+                        parms.put(pname, value);
+                    }
+                }
+            } catch (IOException ioe) {
+                sendError(HTTP_INTERNALERROR, "SERVER INTERNAL ERROR: IOException: " + ioe.getMessage());
+            }
+        }
 
 	// Utilities
 	public static final String
