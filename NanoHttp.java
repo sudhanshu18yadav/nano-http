@@ -1,9 +1,6 @@
 public class NanoHttp{
 
 
-
-
-
 	public Response serve(String uri, String method, Properties header, Properties parms, Properties files) {
         System.out.println(method + " '" + uri + "' ");
 
@@ -91,7 +88,7 @@ public class NanoHttp{
 
 
 
-	public NanoHTTP(int port) throws IOException {
+	public NanoHttp(int port) throws IOException {
         myTcpPort = port;
         myServerSocket = new ServerSocket(myTcpPort);
         myThread = new Thread(new Runnable() {
@@ -118,12 +115,12 @@ public static void main(String[] args) {
             }
 
         // Change port if requested
-        int port = 80;
+        int port = 4200;
         if (args.length > 0 && lopt != 0)
             port = Integer.parseInt(args[0]);
 
         try {
-            new NanoHTTPd(port);
+            new NanoHttp(port);
         } catch (IOException ioe) {
             System.err.println("Couldn't start server:\n" + ioe);
             System.exit(-1);
@@ -587,7 +584,7 @@ public static void main(String[] args) {
             if (len > 0) {
                 String tmpdir = System.getProperty("java.io.tmpdir");
                 try {
-                    File temp = File.createTempFile("NanoHTTPd", "", new File(tmpdir));
+                    File temp = File.createTempFile("NanoHttp", "", new File(tmpdir));
                     OutputStream fstream = new FileOutputStream(temp);
                     fstream.write(b, offset, len);
                     fstream.close();
@@ -956,5 +953,12 @@ public static void main(String[] args) {
             MIME_HTML = "text/html",
             MIME_DEFAULT_BINARY = "application/octet-stream",
             MIME_XML = "text/xml";
+
+    private static java.text.SimpleDateFormat gmtFrmt;
+
+    static {
+        gmtFrmt = new java.text.SimpleDateFormat("E, d MMM yyyy HH:mm:ss 'GMT'", Locale.US);
+        gmtFrmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
 
 }
