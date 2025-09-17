@@ -140,6 +140,32 @@ public class NanoHttp{
             }
         }
 
+        private String saveTmpFile(byte[] b, int offset, int len) {
+            String path = "";
+            if (len > 0) {
+                String tmpdir = System.getProperty("java.io.tmpdir");
+                try {
+                    File temp = File.createTempFile("NanoHTTP", "", new File(tmpdir));
+                    OutputStream fstream = new FileOutputStream(temp);
+                    fstream.write(b, offset, len);
+                    fstream.close();
+                    path = temp.getAbsolutePath();
+                } catch (Exception e) { // Catch exception if any
+                    System.err.println("Error: " + e.getMessage());
+                }
+            }
+            return path;
+        }
+
+         private int stripMultipartHeaders(byte[] b, int offset) {
+            int i = 0;
+            for (i = offset; i < b.length; i++) {
+                if (b[i] == '\r' && b[++i] == '\n' && b[++i] == '\r' && b[++i] == '\n')
+                    break;
+            }
+            return i + 1;
+        }
+
 	// Utilities
 	public static final String
             HTTP_OK = "200 OK",
